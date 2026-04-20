@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>샘플 보관 관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #0F6E56; --primary-dark: #085041; --primary-light: #E1F5EE;
+  --accent: #5DCAA5;
+  --amber: #854F0B; --amber-bg: #FAEEDA; --amber-border: #FAC775;
+  --red: #A32D2D; --red-bg: #FCEBEB; --red-border: #F7C1C1;
+  --blue: #185FA5; --blue-bg: #E6F1FB;
+  --text: #1a1a18; --text-muted: #6b6b68; --text-hint: #9b9b96;
+  --bg: #f7f6f2; --surface: #ffffff;
+  --border: rgba(0,0,0,0.1); --border-mid: rgba(0,0,0,0.18);
+  --radius: 12px; --radius-sm: 8px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+}
+html { height: 100%; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100%; -webkit-font-smoothing: antialiased; }
+.app { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); }
+.page { display: none; min-height: 100vh; }
+.page.active { display: block; }
+.header { background: var(--primary); padding: 0 16px; height: 56px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
+.header h1 { font-size: 16px; font-weight: 600; color: #fff; flex: 1; letter-spacing: -0.2px; }
+.header-back { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.18); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.header-btn { height: 30px; padding: 0 12px; border-radius: 20px; background: rgba(255,255,255,0.18); border: none; color: #fff; font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; font-weight: 500; white-space: nowrap; }
+.home-hero { background: var(--primary); padding: 20px 20px 60px; position: relative; overflow: hidden; }
+.home-hero::after { content: ''; position: absolute; bottom: -30px; left: -10%; right: -10%; height: 70px; background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.hero-inner { position: relative; z-index: 1; }
+.hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.hero-logo { width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hero-title h2 { font-size: 20px; font-weight: 600; color: #fff; letter-spacing: -0.4px; }
+.hero-title p { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+.hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.hero-stat { background: rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 8px; text-align: center; }
+.hero-stat .num { font-size: 24px; font-weight: 600; color: #fff; line-height: 1; }
+.hero-stat .lbl { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; }
+.hero-stat.warn .num { color: #FAC775; }
+.hero-stat.danger .num { color: #F7C1C1; }
+.home-actions { padding: 8px 16px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.action-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 14px; cursor: pointer; text-align: center; transition: transform 0.15s; border: 0.5px solid var(--border); user-select: none; }
+.action-card:active { transform: scale(0.97); }
+.action-card .ic { width: 46px; height: 46px; border-radius: 12px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
+.action-card.green .ic { background: var(--primary-light); }
+.action-card.blue .ic { background: var(--blue-bg); }
+.action-card h3 { font-size: 14px; font-weight: 600; color: var(--text); }
+.action-card p { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+.section { padding: 20px 16px 0; }
+.section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 10px; }
+.recent-item { background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow); margin-bottom: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 0.5px solid var(--border); }
+.recent-thumb { width: 38px; height: 38px; border-radius: 8px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; overflow: hidden; }
+.recent-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.sync-bar { padding: 10px 16px; font-size: 11px; color: var(--text-hint); display: flex; align-items: center; gap: 6px; margin-top: 16px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; animation: pulse 2s infinite; }
+.sync-dot.off { background: #ccc; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.badge.ok { background: var(--primary-light); color: var(--primary); }
+.badge.soon { background: var(--amber-bg); color: var(--amber); }
+.badge.expired { background: var(--red-bg); color: var(--red); }
+.alert { margin: 12px 16px 0; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; line-height: 1.5; display: none; }
+.alert.visible { display: block; }
+.alert.warn { background: var(--amber-bg); color: var(--amber); border: 0.5px solid var(--amber-border); }
+.alert.danger { background: var(--red-bg); color: var(--red); border: 0.5px solid var(--red-border); }
+.list-controls { padding: 12px 16px 0; display: flex; gap: 8px; }
+.search-input { flex: 1; height: 38px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); padding: 0 12px; font-size: 14px; background: var(--surface); color: var(--text); font-family: 'Noto Sans KR', sans-serif; }
+.search-input:focus { outline: none; border-color: var(--primary); }
+.filter-select { height: 38px; padding: 0 8px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; max-width: 120px; }
+.sort-row { padding: 8px 16px 0; display: flex; gap: 6px; flex-wrap: wrap; }
+.sort-btn { height: 28px; padding: 0 10px; border-radius: 20px; border: 0.5px solid var(--border-mid); background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.1s; }
+.sort-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sample-list { padding: 12px 16px; }
+.sample-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 10px; border: 0.5px solid var(--border); overflow: hidden; }
+.sample-card.expanded { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(15,110,86,0.1); }
+.sample-card.soon-card { border-color: var(--amber-border); }
+.sample-card.expired-card { border-color: var(--red-border); }
+.card-main { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; user-select: none; }
+.card-thumb { width: 50px; height: 50px; border-radius: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; overflow: hidden; }
+.card-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.card-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.card-detail { border-top: 0.5px solid var(--border); padding: 14px; display: none; background: #fafaf8; }
+.sample-card.expanded .card-detail { display: block; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.dl { font-size: 11px; color: var(--text-hint); margin-bottom: 2px; }
+.dv { font-size: 13px; font-weight: 500; color: var(--text); }
+.dv.red { color: var(--red); }
+.dv.amber { color: var(--amber); }
+.note-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+.detail-img { width: 100%; max-height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 12px; }
+.detail-actions { display: flex; gap: 8px; }
+.btn { height: 40px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border-mid); background: var(--surface); color: var(--text); display: inline-flex; align-items: center; gap: 6px; transition: background 0.12s, transform 0.1s; font-family: 'Noto Sans KR', sans-serif; white-space: nowrap; }
+.btn:hover { background: var(--bg); }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn.primary:hover { background: var(--primary-dark); }
+.btn.danger { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+.btn.full { width: 100%; justify-content: center; }
+.btn.sm { height: 32px; font-size: 12px; padding: 0 12px; }
+.cam-area { margin: 16px; border-radius: var(--radius); background: #f0f0eb; border: 1.5px dashed var(--border-mid); overflow: hidden; position: relative; min-height: 190px; display: flex; align-items: center; justify-content: center; }
+.cam-placeholder { text-align: center; padding: 32px 20px; color: var(--text-muted); }
+.cam-placeholder svg { width: 40px; height: 40px; opacity: 0.35; margin: 0 auto 10px; display: block; }
+.cam-placeholder p { font-size: 13px; line-height: 1.6; }
+#camVideo, #capturedImg { width: 100%; height: 210px; object-fit: cover; display: block; }
+.cam-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.45)); padding: 14px; display: flex; justify-content: center; }
+.shutter { width: 60px; height: 60px; border-radius: 50%; background: #fff; border: 4px solid rgba(255,255,255,0.5); cursor: pointer; transition: transform 0.1s; }
+.shutter:active { transform: scale(0.9); }
+.cam-btns { padding: 0 16px 12px; display: flex; gap: 8px; }
+.form-wrap { padding: 0 16px; }
+.fsec { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--text-muted); text-transform: uppercase; margin: 18px 0 10px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+.form-group input, .form-group textarea { width: 100%; height: 40px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); padding: 0 12px; font-size: 14px; background: var(--surface); color: var(--text); font-family: 'Noto Sans KR', sans-serif; }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+.form-group textarea { height: 76px; padding: 10px 12px; resize: none; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-footer { padding: 16px 16px 40px; }
+.req { color: var(--red); }
+#fileInput { display: none; }
+.setup-wrap { padding: 24px 20px; }
+.setup-wrap h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.setup-wrap .sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+.setup-step { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px; border: 0.5px solid var(--border); }
+.step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; flex-shrink: 0; }
+.step-head { display: flex; align-items: center; margin-bottom: 10px; font-weight: 600; font-size: 14px; }
+.step-body { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+.step-body a { color: var(--blue); }
+.cfg-input { width: 100%; height: 38px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); padding: 0 12px; font-size: 13px; background: var(--surface); color: var(--text); font-family: monospace; margin-top: 5px; }
+.cfg-input:focus { outline: none; border-color: var(--primary); }
+.cfg-label { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 8px; display: block; }
+.err-msg { font-size: 12px; color: var(--red); margin-top: 8px; line-height: 1.5; display: none; }
+.empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+.empty svg { width: 52px; height: 52px; margin-bottom: 14px; opacity: 0.3; }
+.empty p { font-size: 14px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: #1a1a18; color: #fff; padding: 10px 22px; border-radius: 24px; font-size: 13px; opacity: 0; pointer-events: none; transition: all 0.28s cubic-bezier(.4,0,.2,1); z-index: 999; white-space: nowrap; font-weight: 500; max-width: calc(100vw - 32px); text-align: center; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.loading-overlay { position: fixed; inset: 0; background: rgba(247,246,242,0.9); display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; gap: 14px; }
+.spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--primary-light); border-top-color: var(--primary); animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-txt { font-size: 13px; color: var(--text-muted); }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-bg.show { opacity: 1; pointer-events: all; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; transform: translateY(20px); transition: transform 0.25s cubic-bezier(.4,0,.2,1); }
+.modal-bg.show .modal { transform: translateY(0); }
+.modal h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+.modal p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btns .btn { flex: 1; justify-content: center; }
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loadingTxt">불러오는 중...</div>
+</div>
+<div class="modal-bg" id="confirmModal">
+  <div class="modal">
+    <h3>샘플 폐기</h3>
+    <p id="confirmMsg"></p>
+    <div class="modal-btns">
+      <button class="btn" id="cancelBtn">취소</button>
+      <button class="btn danger" id="confirmBtn">폐기 처리</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- SETUP -->
+  <div class="page active" id="page-setup">
+    <div class="setup-wrap">
+      <h2>🔧 Firebase 초기 설정</h2>
+      <p class="sub">아래 3단계를 따라 설정하면 20명이 실시간으로 앱을 공유할 수 있습니다. (완전 무료)</p>
+      <div class="setup-step">
+        <div class="step-head"><span class="step-num">1</span>Firebase 프로젝트 만들기</div>
+        <div class="step-body"><a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → <strong>프로젝트 추가</strong> → 이름 입력 → Google Analytics 비활성화 → 완료</div>
+      </div>
+      <div class="setup-step">
+        <div class="step-head"><span class="step-num">2</span>Firestore 데이터베이스 만들기</div>
+        <div class="step-body">왼쪽 메뉴 → <strong>빌드 → Firestore Database</strong> → <strong>데이터베이스 만들기</strong> → <strong>테스트 모드</strong> → 위치: <strong>asia-northeast3 (서울)</strong> → 완료</div>
+      </div>
+      <div class="setup-step" style="border-color: var(--primary);">
+        <div class="step-head"><span class="step-num">3</span>웹 앱 등록 후 설정값 입력</div>
+        <div class="step-body" style="margin-bottom:14px;">Firebase 콘솔 상단 <strong>프로젝트 개요</strong> → <strong>+ 앱 추가</strong> → <strong>&lt;/&gt; 웹</strong> → 앱 이름 입력 → <strong>앱 등록</strong> → firebaseConfig 값들을 아래에 복사·붙여넣기</div>
+        <label class="cfg-label">apiKey</label>
+        <input class="cfg-input" id="cfg-apiKey" placeholder="AIzaSy...">
+        <label class="cfg-label">authDomain</label>
+        <input class="cfg-input" id="cfg-authDomain" placeholder="your-project.firebaseapp.com">
+        <label class="cfg-label">projectId</label>
+        <input class="cfg-input" id="cfg-projectId" placeholder="your-project-id">
+        <label class="cfg-label">storageBucket</label>
+        <input class="cfg-input" id="cfg-storageBucket" placeholder="your-project.appspot.com">
+        <label class="cfg-label">messagingSenderId</label>
+        <input class="cfg-input" id="cfg-messagingSenderId" placeholder="123456789012">
+        <label class="cfg-label">appId</label>
+        <input class="cfg-input" id="cfg-appId" placeholder="1:123456789012:web:...">
+        <div class="err-msg" id="setupError"></div>
+        <button class="btn primary full" id="saveConfigBtn" style="margin-top:14px;">연결하고 시작하기</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-hint);line-height:1.7;margin-top:8px;">
+        💡 무료 플랜(Spark): 저장 1GB · 일 50,000읽기 · 일 20,000쓰기 — 20명 팀에 충분합니다.<br>
+        📷 사진은 자동 압축(~80KB)되어 저장됩니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="page" id="page-home">
+    <div class="home-hero">
+      <div class="hero-inner">
+        <div class="hero-top">
+          <div class="hero-logo">
+            <svg viewBox="0 0 28 28" fill="none">
+              <rect x="3" y="7" width="16" height="18" rx="3" fill="rgba(255,255,255,0.3)"/>
+              <rect x="7" y="3" width="16" height="18" rx="3" fill="rgba(255,255,255,0.6)"/>
+              <circle cx="20" cy="20" r="7" fill="rgba(255,255,255,0.9)"/>
+              <path d="M20 17v3l2 2" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="hero-title">
+            <h2>샘플 보관 관리</h2>
+            <p>Sample Storage Manager</p>
+          </div>
+          <button class="header-btn" id="btnGoSetup" style="margin-left:auto; display:flex; align-items:center;">⚙ 설정</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="num" id="st-total">—</div><div class="lbl">전체 샘플</div></div>
+          <div class="hero-stat warn"><div class="num" id="st-soon">—</div><div class="lbl">폐기 임박</div></div>
+          <div class="hero-stat danger"><div class="num" id="st-expired">—</div><div class="lbl">폐기 초과</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="home-actions">
+      <div class="action-card green" id="btnGoCapture">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#0F6E56" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="#0F6E56" stroke-width="1.5"/></svg></div>
+        <h3>샘플 보관하기</h3><p>사진 촬영 및 정보 등록</p>
+      </div>
+      <div class="action-card blue" id="btnGoList">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="#185FA5" stroke-width="1.5"/><line x1="7" y1="8" x2="17" y2="8" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="12" x2="17" y2="12" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="16" x2="13" y2="16" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <h3>샘플 리스트</h3><p>보관 현황 및 필터링</p>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">최근 등록 샘플</div>
+      <div id="home-recent"><p style="font-size:13px;color:var(--text-muted);">불러오는 중...</p></div>
+    </div>
+    <div class="sync-bar"><span class="sync-dot" id="syncDot"></span><span id="syncTxt">연결 중...</span></div>
+    <div style="height:24px;"></div>
+  </div>
+
+  <!-- CAPTURE -->
+  <div class="page" id="page-capture">
+    <div class="header">
+      <button class="header-back" id="btnCaptureBack">←</button>
+      <h1>샘플 보관하기</h1>
+    </div>
+    <div class="form-wrap"><div class="fsec">사진 등록</div></div>
+    <div class="cam-area" id="camArea">
+      <div class="cam-placeholder" id="camPlaceholder">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M35 30a2 2 0 01-2 2H7a2 2 0 01-2-2V14a2 2 0 012-2h5l2-4h8l2 4h5a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="21" r="5" stroke="currentColor" stroke-width="1.5"/></svg>
+        <p>카메라로 촬영하거나<br>갤러리에서 사진을 선택하세요</p>
+      </div>
+      <video id="camVideo" autoplay playsinline style="display:none;"></video>
+      <canvas id="camCanvas" style="display:none;"></canvas>
+      <img id="capturedImg" style="display:none;" alt="촬영된 사진">
+      <div class="cam-overlay" id="camOverlay" style="display:none;">
+        <button class="shutter" id="btnShutter"></button>
+      </div>
+    </div>
+    <div class="cam-btns">
+      <button class="btn" id="btnStartCam" style="flex:1;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>카메라
+      </button>
+      <button class="btn" id="btnGallery" style="flex:1;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>갤러리
+      </button>
+      <button class="btn" id="btnRetake" style="display:none;">다시찍기</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="form-wrap">
+      <div class="fsec">샘플 정보</div>
+      <div class="form-group"><label>샘플명 <span class="req">*</span></label><input type="text" id="f-name" placeholder="예: 레드 와인 A-001"></div>
+      <div class="form-group"><label>담당자 <span class="req">*</span></label><input type="text" id="f-manager" placeholder="예: 홍길동"></div>
+      <div class="form-row">
+        <div class="form-group"><label>입고 날짜 <span class="req">*</span></label><input type="date" id="f-indate"></div>
+        <div class="form-group"><label>폐기 예정일</label><input type="date" id="f-expiry"></div>
+      </div>
+      <div class="form-group"><label>보관 위치</label><input type="text" id="f-location" placeholder="예: 냉장고 3번 2칸"></div>
+      <div class="form-group"><label>비고</label><textarea id="f-note" placeholder="특이사항을 입력하세요"></textarea></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn primary full" id="btnSave">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.5"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="1.5"/></svg>저장하기
+      </button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="page" id="page-list">
+    <div class="header">
+      <button class="header-back" id="btnListBack">←</button>
+      <h1>샘플 리스트</h1>
+      <button class="header-btn" id="btnExport">↓ CSV</button>
+    </div>
+    <div id="listAlert" class="alert"></div>
+    <div class="list-controls">
+      <input class="search-input" id="searchInput" placeholder="🔍  샘플명 검색...">
+      <select class="filter-select" id="filterManager"><option value="">전체 담당자</option></select>
+    </div>
+    <div class="sort-row">
+      <button class="sort-btn active" data-sort="indate">입고일↓</button>
+      <button class="sort-btn" data-sort="expiry">폐기일↑</button>
+      <button class="sort-btn" data-sort="name">이름순</button>
+      <button class="sort-btn" data-sort="expired">폐기초과</button>
+    </div>
+    <div class="sample-list" id="sampleList"></div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const CFG_KEY = 'sampleMgr_v3';
+let db = null, samples = [], currentSort = 'indate', camStream = null, capturedDataUrl = null;
+
+// ─── UTILS ───────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._tt); window._tt = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function showLoad(txt) { $('loadingTxt').textContent = txt||'처리 중...'; $('loadingOverlay').style.display='flex'; }
+function hideLoad() { $('loadingOverlay').style.display='none'; }
+
+function goTo(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $(id).classList.add('active');
+  stopCam();
+  window.scrollTo(0,0);
+  if (id==='page-home') { updateStats(); renderRecent(); }
+  if (id==='page-capture') { initForm(); }
+  if (id==='page-list') { updateManagerFilter(); renderList(); checkAlert(); }
+}
+
+// ─── CONFIG ──────────────────────────────────────────
+const loadCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)); } catch(e) { return null; } };
+
+$('saveConfigBtn').addEventListener('click', async () => {
+  const cfg = {
+    apiKey: $('cfg-apiKey').value.trim(),
+    authDomain: $('cfg-authDomain').value.trim(),
+    projectId: $('cfg-projectId').value.trim(),
+    storageBucket: $('cfg-storageBucket').value.trim(),
+    messagingSenderId: $('cfg-messagingSenderId').value.trim(),
+    appId: $('cfg-appId').value.trim(),
+  };
+  const errEl = $('setupError');
+  errEl.style.display = 'none';
+  if (!cfg.apiKey || !cfg.projectId) {
+    errEl.textContent = '❌ API Key와 Project ID는 필수입니다.';
+    errEl.style.display = 'block'; return;
+  }
+  $('saveConfigBtn').textContent = '연결 확인 중...';
+  $('saveConfigBtn').disabled = true;
+  try {
+    const testApp = initializeApp(cfg, 'setup-test');
+    const testDb = getFirestore(testApp);
+    await new Promise((resolve, reject) => {
+      const q = query(collection(testDb, 'samples'), orderBy('createdAt','desc'));
+      const unsub = onSnapshot(q, () => { unsub(); resolve(); }, err => { unsub(); reject(err); });
+      setTimeout(() => reject(new Error('연결 시간 초과 (8초)')), 8000);
+    });
+    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+    toast('✓ 연결 성공! 앱을 시작합니다.');
+    setTimeout(() => location.reload(), 1000);
+  } catch(e) {
+    $('saveConfigBtn').textContent = '연결하고 시작하기';
+    $('saveConfigBtn').disabled = false;
+    errEl.textContent = '❌ 연결 실패: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+
+// ─── FIREBASE INIT ────────────────────────────────────
+const cfg = loadCfg();
+if (cfg && cfg.apiKey) {
+  try {
+    const app = initializeApp(cfg);
+    db = getFirestore(app);
+    goTo('page-home');
+    startSync();
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    localStorage.removeItem(CFG_KEY);
+    goTo('page-setup');
+  }
+} else {
+  goTo('page-setup');
+}
+
+// ─── REALTIME SYNC ────────────────────────────────────
+function startSync() {
+  showLoad('데이터 불러오는 중...');
+  const q = query(collection(db, 'samples'), orderBy('createdAt','desc'));
+  onSnapshot(q, snap => {
+    samples = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    hideLoad();
+    setSyncOk(true);
+    updateStats(); renderRecent();
+    if ($('page-list').classList.contains('active')) { updateManagerFilter(); renderList(); checkAlert(); }
+  }, err => {
+    hideLoad(); setSyncOk(false);
+    toast('동기화 오류: ' + err.message);
+  });
+}
+
+function setSyncOk(ok) {
+  const dot = $('syncDot'), txt = $('syncTxt');
+  if (!dot||!txt) return;
+  dot.className = ok ? 'sync-dot' : 'sync-dot off';
+  txt.textContent = ok ? '실시간 연동 중 · ' + new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) + ' 기준' : '연결 오류 — 새로고침하세요';
+}
+
+// ─── NAV ─────────────────────────────────────────────
+$('btnGoSetup').addEventListener('click', () => goTo('page-setup'));
+$('btnGoCapture').addEventListener('click', () => goTo('page-capture'));
+$('btnGoList').addEventListener('click', () => goTo('page-list'));
+$('btnCaptureBack').addEventListener('click', () => goTo('page-home'));
+$('btnListBack').addEventListener('click', () => goTo('page-home'));
+
+// ─── SAVE ─────────────────────────────────────────────
+$('btnSave').addEventListener('click', async () => {
+  const name = $('f-name').value.trim(), manager = $('f-manager').value.trim(), indate = $('f-indate').value;
+  if (!name) { toast('샘플명을 입력하세요'); return; }
+  if (!manager) { toast('담당자를 입력하세요'); return; }
+  if (!indate) { toast('입고 날짜를 입력하세요'); return; }
+  if (!db) { toast('Firebase 연결이 필요합니다'); return; }
+  showLoad('저장 중...');
+  try {
+    await addDoc(collection(db, 'samples'), {
+      name, manager, indate,
+      expiry: $('f-expiry').value,
+      location: $('f-location').value.trim(),
+      note: $('f-note').value.trim(),
+      photo: capturedDataUrl || null,
+      createdAt: serverTimestamp(),
+    });
+    hideLoad(); toast('✓ 샘플이 저장되었습니다');
+    stopCam(); setTimeout(() => goTo('page-list'), 700);
+  } catch(e) { hideLoad(); toast('저장 실패: ' + e.message); }
+});
+
+// ─── DELETE ───────────────────────────────────────────
+function openConfirm(id, name) {
+  $('confirmMsg').textContent = `"${name}" 샘플을 폐기 처리하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`;
+  const btn = $('confirmBtn');
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  newBtn.addEventListener('click', async () => {
+    closeModal();
+    showLoad('처리 중...');
+    try {
+      await deleteDoc(doc(db, 'samples', id));
+      hideLoad(); toast('샘플이 폐기 처리되었습니다');
+    } catch(e) { hideLoad(); toast('삭제 실패: ' + e.message); }
+  });
+  $('confirmModal').classList.add('show');
+}
+function closeModal() { $('confirmModal').classList.remove('show'); }
+$('cancelBtn').addEventListener('click', closeModal);
+$('confirmModal').addEventListener('click', e => { if (e.target === $('confirmModal')) closeModal(); });
+
+// ─── CAMERA ───────────────────────────────────────────
+$('btnStartCam').addEventListener('click', async () => {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio: false });
+    const v = $('camVideo'); v.srcObject = camStream; v.style.display = 'block';
+    $('camPlaceholder').style.display = 'none';
+    $('camOverlay').style.display = 'flex';
+    $('btnStartCam').style.display = 'none';
+  } catch(e) { toast('카메라 접근 권한이 필요합니다. 갤러리를 이용해주세요.'); }
+});
+
+$('btnShutter').addEventListener('click', async () => {
+  const v = $('camVideo'), c = $('camCanvas');
+  c.width = v.videoWidth||640; c.height = v.videoHeight||480;
+  c.getContext('2d').drawImage(v, 0, 0);
+  capturedDataUrl = await compress(c.toDataURL('image/jpeg', 0.9));
+  showPhoto(capturedDataUrl); stopCam(); toast('사진 촬영 완료');
+});
+
+$('btnGallery').addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    capturedDataUrl = await compress(ev.target.result);
+    showPhoto(capturedDataUrl); $('btnStartCam').style.display = 'none'; toast('사진 선택 완료');
+  };
+  reader.readAsDataURL(file);
+});
+
+$('btnRetake').addEventListener('click', () => {
+  capturedDataUrl = null;
+  $('capturedImg').style.display = 'none';
+  $('camPlaceholder').style.display = 'flex';
+  $('btnRetake').style.display = 'none';
+  $('btnStartCam').style.display = 'inline-flex';
+  $('fileInput').value = '';
+});
+
+function showPhoto(url) {
+  $('capturedImg').src = url; $('capturedImg').style.display = 'block';
+  $('camPlaceholder').style.display = 'none';
+  $('camVideo').style.display = 'none';
+  $('camOverlay').style.display = 'none';
+  $('btnRetake').style.display = 'inline-flex';
+}
+
+function stopCam() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  $('camVideo').style.display = 'none';
+  $('camOverlay').style.display = 'none';
+}
+
+function compress(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      const max = 800;
+      if (w > max || h > max) { const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.65));
+    };
+    img.src = dataUrl;
+  });
+}
+
+// ─── FORM ─────────────────────────────────────────────
+function initForm() {
+  const today = new Date().toISOString().split('T')[0];
+  $('f-indate').value = today; autoExpiry();
+  ['f-name','f-manager','f-location','f-note'].forEach(id => $(id).value = '');
+  capturedDataUrl = null;
+  $('capturedImg').style.display = 'none';
+  $('camPlaceholder').style.display = 'flex';
+  $('btnRetake').style.display = 'none';
+  $('btnStartCam').style.display = 'inline-flex';
+  $('camOverlay').style.display = 'none';
+  $('camVideo').style.display = 'none';
+  $('fileInput').value = '';
+}
+
+function autoExpiry() {
+  const v = $('f-indate').value; if (!v) return;
+  const d = new Date(v); d.setFullYear(d.getFullYear()+1);
+  $('f-expiry').value = d.toISOString().split('T')[0];
+}
+$('f-indate').addEventListener('input', autoExpiry);
+
+// ─── STATUS ───────────────────────────────────────────
+const expStatus = exp => {
+  if (!exp) return 'ok';
+  const diff = (new Date(exp) - new Date().setHours(0,0,0,0)) / 86400000;
+  return diff < 0 ? 'expired' : diff <= 30 ? 'soon' : 'ok';
+};
+const stLabel = s => ({ok:'정상',soon:'임박',expired:'초과'})[s];
+const dLabel = exp => {
+  if (!exp) return '';
+  const d = Math.round((new Date(exp) - new Date().setHours(0,0,0,0)) / 86400000);
+  return d < 0 ? `D+${Math.abs(d)}` : d === 0 ? 'D-Day' : `D-${d}`;
+};
+
+// ─── HOME ─────────────────────────────────────────────
+function updateStats() {
+  $('st-total').textContent = samples.length;
+  $('st-soon').textContent = samples.filter(s=>expStatus(s.expiry)==='soon').length;
+  $('st-expired').textContent = samples.filter(s=>expStatus(s.expiry)==='expired').length;
+}
+
+function renderRecent() {
+  const el = $('home-recent'), recent = samples.slice(0,4);
+  if (!recent.length) { el.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">등록된 샘플이 없습니다. 첫 샘플을 등록해보세요!</p>'; return; }
+  el.innerHTML = recent.map(s => {
+    const st = expStatus(s.expiry);
+    const thumb = s.photo ? `<div class="recent-thumb"><img src="${s.photo}" alt=""></div>` : `<div class="recent-thumb">🧪</div>`;
+    return `<div class="recent-item">${thumb}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name)}</div><div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${esc(s.manager||'')} · ${s.indate||''}</div></div><span class="badge ${st}">${stLabel(st)}</span></div>`;
+  }).join('');
+}
+
+// ─── LIST ─────────────────────────────────────────────
+function updateManagerFilter() {
+  const sel = $('filterManager'), cur = sel.value;
+  const managers = [...new Set(samples.map(s=>s.manager).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  sel.innerHTML = '<option value="">전체 담당자</option>' + managers.map(m=>`<option value="${esc(m)}" ${m===cur?'selected':''}>${esc(m)}</option>`).join('');
+}
+
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentSort = btn.dataset.sort;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  });
+});
+$('searchInput').addEventListener('input', renderList);
+$('filterManager').addEventListener('change', renderList);
+
+function renderList() {
+  const search = $('searchInput').value.toLowerCase();
+  const mgr = $('filterManager').value;
+  let f = samples.filter(s => (!search||(s.name||'').toLowerCase().includes(search)) && (!mgr||s.manager===mgr));
+  if (currentSort==='indate') f.sort((a,b)=>(b.indate||'').localeCompare(a.indate||''));
+  else if (currentSort==='expiry') f.sort((a,b)=>(a.expiry||'').localeCompare(b.expiry||''));
+  else if (currentSort==='name') f.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
+  else if (currentSort==='expired') { const ex=f.filter(s=>expStatus(s.expiry)==='expired'); f=[...ex,...f.filter(s=>expStatus(s.expiry)!=='expired')]; }
+
+  const el = $('sampleList');
+  if (!f.length) { el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><line x1="7" y1="8" x2="17" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="16" x2="12" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><p>등록된 샘플이 없습니다</p></div>`; return; }
+
+  el.innerHTML = f.map(s => {
+    const st = expStatus(s.expiry), dl = dLabel(s.expiry);
+    const thumb = s.photo ? `<div class="card-thumb"><img src="${s.photo}" alt=""></div>` : `<div class="card-thumb">🧪</div>`;
+    const dvCls = st==='expired'?'dv red':st==='soon'?'dv amber':'dv';
+    const dimg = s.photo ? `<img class="detail-img" src="${s.photo}" alt="">` : '';
+    return `<div class="sample-card ${st!=='ok'?st+'-card':''}" data-id="${s.id}">
+      <div class="card-main">
+        ${thumb}
+        <div style="flex:1;min-width:0;"><div class="card-name">${esc(s.name)}</div><div class="card-sub">${esc(s.manager||'')} · ${s.indate||''}</div></div>
+        <div style="text-align:right;flex-shrink:0;"><span class="badge ${st}">${stLabel(st)}</span>${dl?`<div style="font-size:10px;color:var(--text-hint);margin-top:3px;">${dl}</div>`:''}</div>
+      </div>
+      <div class="card-detail">
+        ${dimg}
+        <div class="detail-grid">
+          <div><div class="dl">입고 날짜</div><div class="dv">${s.indate||'-'}</div></div>
+          <div><div class="dl">폐기 예정일</div><div class="${dvCls}">${s.expiry||'-'}</div></div>
+          <div><div class="dl">담당자</div><div class="dv">${esc(s.manager||'-')}</div></div>
+          <div><div class="dl">보관 위치</div><div class="dv">${esc(s.location||'-')}</div></div>
+        </div>
+        ${s.note?`<div class="note-box">${esc(s.note)}</div>`:''}
+        <div class="detail-actions"><button class="btn danger sm del-btn" data-id="${s.id}" data-name="${esc(s.name)}">🗑 폐기 처리</button></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // events after render
+  $('sampleList').querySelectorAll('.card-main').forEach(m => m.addEventListener('click', () => m.closest('.sample-card').classList.toggle('expanded')));
+  $('sampleList').querySelectorAll('.del-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openConfirm(b.dataset.id, b.dataset.name); }));
+}
+
+function checkAlert() {
+  const el = $('listAlert');
+  const ex = samples.filter(s=>expStatus(s.expiry)==='expired').length;
+  const sn = samples.filter(s=>expStatus(s.expiry)==='soon').length;
+  if (ex > 0) { el.textContent=`⚠ 폐기 기한 초과 샘플 ${ex}개 — 즉시 처리가 필요합니다.`; el.className='alert danger visible'; }
+  else if (sn > 0) { el.textContent=`📅 30일 이내 폐기 예정 샘플 ${sn}개 있습니다.`; el.className='alert warn visible'; }
+  else { el.className='alert'; }
+}
+
+// ─── EXPORT ───────────────────────────────────────────
+$('btnExport').addEventListener('click', () => {
+  const rows = [['샘플명','담당자','입고날짜','폐기예정일','보관위치','비고','상태']];
+  samples.forEach(s => rows.push([s.name,s.manager,s.indate,s.expiry,s.location,s.note,stLabel(expStatus(s.expiry))].map(v=>`"${(v||'').replace(/"/g,'""')}"`)));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download = '샘플리스트_'+new Date().toISOString().split('T')[0]+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('CSV 파일 다운로드 중...');
+});
+</script>
+</body>
+</html>
