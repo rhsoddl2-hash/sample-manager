@@ -228,7 +228,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
             <h2>샘플 보관 관리</h2>
             <p>Sample Storage Manager</p>
           </div>
-          <button class="header-btn" id="btnGoSetup" style="margin-left:auto; display:flex; align-items:center;">⚙ 설정</button>
+          
         </div>
         <div class="hero-stats">
           <div class="hero-stat"><div class="num" id="st-total">—</div><div class="lbl">전체 샘플</div></div>
@@ -329,7 +329,6 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const CFG_KEY = 'sampleMgr_v3';
 let db = null, samples = [], currentSort = 'indate', camStream = null, capturedDataUrl = null;
 
 // ─── UTILS ───────────────────────────────────────────
@@ -353,60 +352,25 @@ function goTo(id) {
   if (id==='page-list') { updateManagerFilter(); renderList(); checkAlert(); }
 }
 
-// ─── CONFIG ──────────────────────────────────────────
-const loadCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY)); } catch(e) { return null; } };
-
-$('saveConfigBtn').addEventListener('click', async () => {
-  const cfg = {
-    apiKey: $('cfg-apiKey').value.trim(),
-    authDomain: $('cfg-authDomain').value.trim(),
-    projectId: $('cfg-projectId').value.trim(),
-    storageBucket: $('cfg-storageBucket').value.trim(),
-    messagingSenderId: $('cfg-messagingSenderId').value.trim(),
-    appId: $('cfg-appId').value.trim(),
-  };
-  const errEl = $('setupError');
-  errEl.style.display = 'none';
-  if (!cfg.apiKey || !cfg.projectId) {
-    errEl.textContent = '❌ API Key와 Project ID는 필수입니다.';
-    errEl.style.display = 'block'; return;
-  }
-  $('saveConfigBtn').textContent = '연결 확인 중...';
-  $('saveConfigBtn').disabled = true;
-  try {
-    const testApp = initializeApp(cfg, 'setup-test');
-    const testDb = getFirestore(testApp);
-    await new Promise((resolve, reject) => {
-      const q = query(collection(testDb, 'samples'), orderBy('createdAt','desc'));
-      const unsub = onSnapshot(q, () => { unsub(); resolve(); }, err => { unsub(); reject(err); });
-      setTimeout(() => reject(new Error('연결 시간 초과 (8초)')), 8000);
-    });
-    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
-    toast('✓ 연결 성공! 앱을 시작합니다.');
-    setTimeout(() => location.reload(), 1000);
-  } catch(e) {
-    $('saveConfigBtn').textContent = '연결하고 시작하기';
-    $('saveConfigBtn').disabled = false;
-    errEl.textContent = '❌ 연결 실패: ' + e.message;
-    errEl.style.display = 'block';
-  }
-});
+// ─── FIREBASE CONFIG (고정값 - 설정 불필요) ──────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAQjx6T_qiOadHMAvtEg6QBJUE0Hq1Fm_g",
+  authDomain: "sample-test-2f61f.firebaseapp.com",
+  projectId: "sample-test-2f61f",
+  storageBucket: "sample-test-2f61f.firebasestorage.app",
+  messagingSenderId: "1014435004212",
+  appId: "1:1014435004212:web:d662a392b80465c5156f61"
+};
 
 // ─── FIREBASE INIT ────────────────────────────────────
-const cfg = loadCfg();
-if (cfg && cfg.apiKey) {
-  try {
-    const app = initializeApp(cfg);
-    db = getFirestore(app);
-    goTo('page-home');
-    startSync();
-  } catch(e) {
-    console.error('Firebase init error:', e);
-    localStorage.removeItem(CFG_KEY);
-    goTo('page-setup');
-  }
-} else {
-  goTo('page-setup');
+try {
+  const app = initializeApp(FIREBASE_CONFIG);
+  db = getFirestore(app);
+  goTo('page-home');
+  startSync();
+} catch(e) {
+  console.error('Firebase init error:', e);
+  toast('Firebase 연결 오류가 발생했습니다.');
 }
 
 // ─── REALTIME SYNC ────────────────────────────────────
@@ -433,7 +397,6 @@ function setSyncOk(ok) {
 }
 
 // ─── NAV ─────────────────────────────────────────────
-$('btnGoSetup').addEventListener('click', () => goTo('page-setup'));
 $('btnGoCapture').addEventListener('click', () => goTo('page-capture'));
 $('btnGoList').addEventListener('click', () => goTo('page-list'));
 $('btnCaptureBack').addEventListener('click', () => goTo('page-home'));
